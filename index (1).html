@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vote</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: aliceblue;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      color: black;  /* 부드러운 파란색 */
+      text-align: center;
+      margin-top: 50px;
+      font-weight: 600;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      color: #1c3c5b;
+      margin-bottom: 10px;
+    }
+
+    .section {
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 30px;
+      margin: 20px auto;
+      width: 80%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .section input,
+    .section select,
+    .section button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    /* 버튼 스타일 */
+    .section button {
+      background-color: #FFA550;  /* 부드러운 초록색 */
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .section button:hover {
+      background-color: #FF8C00;  /* 좀 더 짙은 초록색 */
+    }
+
+    .section input[type="number"] {
+      width: 50%;
+      display: inline-block;
+    }
+
+    .section select {
+      width: 50%;
+      display: inline-block;
+    }
+
+    .section p {
+      font-size: 1rem;
+      color: #666;
+    }
+
+    /* 결과 보기 영역 */
+    #results {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+    }
+
+    #results ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    #results li {
+      font-size: 1.2rem;
+      padding: 5px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #results li:last-child {
+      border-bottom: none;
+    }
+
+    /* 작은 화면에서 버튼 정렬 */
+    @media screen and (max-width: 768px) {
+      .section input[type="number"], 
+      .section select {
+        width: 100%;
+      }
+
+      .section input[type="number"],
+      .section select {
+        margin-bottom: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Vote Website</h1>
+
+  <!-- 투표 생성 -->
+  <div class="section" id="create-section">
+    <h2>Make a Vote</h2>
+    <input type="text" id="poll-title" placeholder="Vote Title" />
+    <button id="create-poll-btn">Create Vote</button>
+    <p id="create-message"></p>
+  </div>
+
+  <!-- 투표 참여 -->
+  <div class="section" id="vote-section">
+    <h2>Join a Vote</h2>
+    <input type="number" id="poll-id" placeholder="Vote ID" />
+    <select id="poll-option">
+      <option value="가">Yes</option>
+      <option value="부">No</option>
+      <option value="기권">Maybe</option>
+    </select>
+    <button id="vote-btn">Vote!!</button>
+    <p id="vote-message"></p>
+  </div>
+
+  <!-- 결과 보기 -->
+  <div class="section" id="results-section">
+    <h2>Vote Results</h2>
+    <input type="number" id="result-id" placeholder="Vote ID" />
+    <button id="result-btn">See Results</button>
+    <div id="results"></div>
+  </div>
+
+  <!-- 투표 삭제 -->
+  <div class="section" id="delete-section">
+    <h2>Delete Vote</h2>
+    <input type="number" id="delete-poll-id" placeholder="Vote ID" />
+    <button id="delete-poll-btn">Remove Vote</button>
+    <p id="delete-message"></p>
+  </div>
+
+  <script>
+    // API 서버 URL
+    const API_URL = "https://family-vote-server.vercel.app";
+
+    // 투표 생성
+    document.getElementById("create-poll-btn").addEventListener("click", async () => {
+      const title = document.getElementById("poll-title").value;
+      const options = ["가", "부", "기권"]; // 고정된 옵션
+
+      if (!title) {
+        document.getElementById("create-message").innerText = "Write a Title for your Vote.";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/create`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, options })
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to make a Vote.");
+        }
+
+        const data = await response.json();  // 응답을 JSON으로 받기
+        document.getElementById("create-message").innerText = `Successfully created Vote! ID: ${data.id}`;
+      } catch (error) {
+        document.getElementById("create-message").innerText = `Error: ${error.message}`;
+      }
+    });
+
+    // 투표 참여
+    document.getElementById("vote-btn").addEventListener("click", async () => {
+      const pollId = parseInt(document.getElementById("poll-id").value, 10);
+      const option = document.getElementById("poll-option").value;
+
+      if (!pollId) {
+        document.getElementById("vote-message").innerText = "Enter a Vote ID.";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/vote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pollId, option })
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to join Vote.");
+        }
+
+        const data = await response.json();  // 응답을 JSON으로 받기
+        document.getElementById("vote-message").innerText = `Finished Voting! (${data.title})`;
+      } catch (error) {
+        document.getElementById("vote-message").innerText = `Error: ${error.message}`;
+      }
+    });
+
+    // 결과 보기
+    document.getElementById("result-btn").addEventListener("click", async () => {
+      const pollId = parseInt(document.getElementById("result-id").value, 10);
+
+      if (!pollId) {
+        document.getElementById("results").innerText = "Enter a Vote ID.";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/results/${pollId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch Vote Results.");
+        }
+
+        const data = await response.json();  // 응답을 JSON으로 받기
+
+        const resultsHtml = ` 
+          <h3>${data.title}</h3>
+          <ul>
+            ${data.options.map(option => `<li>${option.name}: ${option.votes}vote(s)</li>`).join("")}
+          </ul>
+        `;
+        document.getElementById("results").innerHTML = resultsHtml;
+      } catch (error) {
+        document.getElementById("results").innerText = `Error: ${error.message}`;
+      }
+    });
+
+    // 투표 삭제
+    document.getElementById("delete-poll-btn").addEventListener("click", async () => {
+      const pollId = parseInt(document.getElementById("delete-poll-id").value, 10);
+
+      if (!pollId) {
+        document.getElementById("delete-message").innerText = "Enter your Vote ID.";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/delete/${pollId}`, {
+          method: "DELETE"
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to Remove Vote.");
+        }
+
+        document.getElementById("delete-message").innerText = "Removed Vote.";
+      } catch (error) {
+        document.getElementById("delete-message").innerText = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+
+</html>
